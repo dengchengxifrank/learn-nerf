@@ -74,6 +74,6 @@ test_rgb = torch.tensor(test_img, device=device)
 
 net = NeRF.to(device)
 
-
+#
 
 
