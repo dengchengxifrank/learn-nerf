@@ -23,22 +23,22 @@ class NeRF(nn.Module):
         self.linear11 = nn.Linear(128,3, bias=True)
 
     def forward(self,x,dir):
-        x1 = self.linear1(x)
-        x2 = self.linear2(x1)
-        x3 = self.linear3(x2)
-        x4 = self.linear4(x3)
+        x1 = F.relu(self.linear1(x))
+        x2 = F.relu(self.linear2(x1))
+        x3 = F.relu(self.linear3(x2))
+        x4 = F.relu(self.linear4(x3))
         x4 = x4 + x1
-        x5 = self.linear5(x4)
+        x5 = F.relu(self.linear5(x4))
         x5 = torch.concat((x5,x),dim=1)
-        x6 = self.linear6(x5)
-        x7 = self.linear7(x6)
-        x8 = self.linear8(x7)
+        x6 = F.relu(self.linear6(x5))
+        x7 = F.relu(self.linear7(x6))
+        x8 = F.relu(self.linear8(x7))
         alpha = self.linear_alpha(x8)
-        x9 = self.linear9(x8)
+        x9 = F.relu(self.linear9(x8))
 
         x10 = torch.concat((x9,dir),dim=1)
-        x11 = self.linear10(x10)
-        rgb = self.linear11(x11)
+        x11 = F.relu(self.linear10(x10))
+        rgb = F.sigmoid(self.linear11(x11))
 
         return alpha,rgb
 

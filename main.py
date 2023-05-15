@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from Network import NeRF
 from Sample_Ray import sample_rays
+from Sample_Ray import Render_rays
 # from Render import render_rays
 from tqdm import tqdm
 
@@ -11,7 +12,8 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 torch.manual_seed(3407)
 np.random.seed(3407)
 n_train = 100
-
+#每条光线上采了多少个点
+N_samples = 64
 data = np.load('./tiny_nerf_data.npz')
 images = data['images']
 poses = data['poses']
@@ -63,7 +65,7 @@ num_rays = rays.shape[0]
 batchsize = 4096
 
 #/保留小数部分     //只保留整数部分
-iter = num_rays//batchsize
+iteration = num_rays//batchsize
 #define distance of near and far
 bound = (2., 6.)
 #for test
@@ -72,8 +74,34 @@ test_rays_o = torch.tensor(test_rays_o, device=device)
 test_rays_d = torch.tensor(test_rays_d, device=device)
 test_rgb = torch.tensor(test_img, device=device)
 
-net = NeRF.to(device)
+net = NeRF().to(device=device)
+optimizer = torch.optim.Adam(net.parameters(), 5e-4)
+loss = torch.nn.MSELoss()
 
-#
+epoch = 100
+
+for i in range(epoch):
+    #random all the rays
+    random_tensor = torch.randperm(num_rays)
+    rays = rays[random_tensor,:]
+    print(rays.shape)
+    # torch.split将产生tuple,tuple可以迭代并且其中的每个元素都是一个tensor -> [batchsize,3]
+    train_iter = iter(torch.split(rays, batchsize, dim=0))
+    for i in range(iteration):
+        train_rays = train_iter.__next__()
+        print(train_rays.shape)
+        #通过torch.chunk分成三份 最后一维是9 切边变为3，之前用concatenate再最后一维拼接起来的，所以这样拆开没有改变顺序
+        rays_o_train , rays_d_train , rays_rgb_train =  torch.chunk(train_rays,3,dim=-1)
+        Render_rays(net,rays_o_train,rays_d_train,rays_rgb_train,bound,N_samples)
+
+
+
+
+
+
+
+
+
+
 
 

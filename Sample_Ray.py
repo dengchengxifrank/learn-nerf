@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 
 
 def sample_rays(H, W, focal, camera_to_world):
@@ -11,6 +12,34 @@ def sample_rays(H, W, focal, camera_to_world):
      rays_o = np.broadcast_to(rays_tmp, (np.shape(rays_d)))
 
      return rays_o,rays_d
+
+def  uniform_sample(near,far,N_samples):
+
+     result = torch.linspace(start=near,end=far,steps=N_samples)
+     return result
+
+
+
+
+def Render_rays(net,rays_o,rays_d,rays_rgb,bound,N_samples):
+     near,far = bound[0],bound[1]
+     sample_uniform = N_samples
+     batchsize = rays_o.shape[0]
+     # [4096,3]
+     rays_o = rays_o
+     rays_d = rays_d
+     rays_rgb = rays_rgb
+     z_vals = uniform_sample(near,far,N_samples)
+     pts = rays_o[..., None, :] + rays_d[..., None, :] * z_vals[..., :, None]  # [N_rays, N_samples, 3]
+     res = pts
+
+
+
+
+
+
+
+
 
 
 
