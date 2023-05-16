@@ -76,7 +76,7 @@ test_rgb = torch.tensor(test_img, device=device)
 
 net = NeRF().to(device=device)
 optimizer = torch.optim.Adam(net.parameters(), 5e-4)
-loss = torch.nn.MSELoss()
+mse = torch.nn.MSELoss()
 
 epoch = 100
 
@@ -92,8 +92,22 @@ for i in range(epoch):
         #print(train_rays.shape)
         #通过torch.chunk分成三份 最后一维是9 切边变为3，之前用concatenate再最后一维拼接起来的，所以这样拆开没有改变顺序
         rays_o_train , rays_d_train , rays_rgb_train =  torch.chunk(train_rays,3,dim=-1)
-        Render_rays(net,rays_o_train,rays_d_train,rays_rgb_train,bound,N_samples)
+        rgb_map  = Render_rays(net,rays_o_train,rays_d_train,bound,N_samples)
 
+        loss = mse(rgb_map, rays_rgb_train)
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+    with torch.no_grad():
+        rgb_list = list()
+        for j in range(test_rays_o.shape[0]):
+            rgb = Render_rays(net,test_rays_o[j],test_rays_d[j],bound,N_samples)
+            rgb_list.append(rgb.unsqueeze(0))
+        rgb = torch.cat(rgb_list, dim=0)
+        loss = mse(rgb, torch.tensor(test_img, device=device)).cpu()
+        psnr = -10. * torch.log(loss).item() / torch.log(torch.tensor([10.]))
+        print(f"PSNR={psnr.item()}")
 
 
 

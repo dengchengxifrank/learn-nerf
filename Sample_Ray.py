@@ -48,8 +48,22 @@ def render_output(net,pts,rays_o,rays_d,near,z_vals):
      dir_embedding = positional_embedding(direction_norm,L=4)
 
      rgb , sigma = net(pts_embedding,dir_embedding)
+     # get the interval
+     # z_vals 是 near 和 far 之间的采样点 是均匀采样,采了 N_samples 个点
+     a = z_vals[..., 1:]  # a 这里是从z_vals 的第二个点到了最后一个点
+     b = z_vals[..., :-1]  # b 这里是从这里是从z_vals 的第一个点到了倒数第二个点
+     delta = z_vals[..., 1:] - z_vals[..., :-1]
+     INF = torch.ones(delta[..., :1].shape).fill_(1e10)
+     delta = torch.cat([delta, INF], -1)  # 在delta后面拼接了一个INF
+     # 5.1569e-02, 8.6743e-02
+     norm = torch.norm(rays_d, dim=-1, keepdim=True)
+     delta = delta * torch.norm(rays_d, dim=-1, keepdim=True)
 
-     print(rgb.shape,sigma.shape)
+     alpha = 1. - torch.exp(-sigma * delta)
+     ones = torch.ones(alpha[..., :1].shape)
+     weights = alpha * torch.cumprod(torch.cat([ones, 1. - alpha], dim=-1), dim=-1)[..., :-1]
+
+     return rgb, weights
 
 
 
@@ -57,23 +71,22 @@ def render_output(net,pts,rays_o,rays_d,near,z_vals):
 
 
 
-
-def Render_rays(net,rays_o,rays_d,rays_rgb,bound,N_samples):
+def Render_rays(net,rays_o,rays_d,bound,N_samples):
      near,far = bound[0],bound[1]
      sample_uniform = N_samples
      batchsize = rays_o.shape[0]
      # [4096,3]
      rays_o = rays_o
      rays_d = rays_d
-     rays_rgb = rays_rgb
      z_vals = uniform_sample(near,far,N_samples)
      pts = rays_o[..., None, :] + rays_d[..., None, :] * z_vals[..., :, None]  # [N_rays, N_samples, 3]
      # pts => tensor(Batch_Size, uniform_N, 3)
      # rays_o, rays_d => tensor(Batch_Size, 3)
      rgb , weights = render_output(net,pts,rays_o,rays_d,near,z_vals)
 
+     rgb_map = torch.sum(weights[..., None] * rgb, dim=-2)
 
-
+     return rgb_map
 
 # if __name__ == '__main__':
 #      input = torch.ones(2,2)
