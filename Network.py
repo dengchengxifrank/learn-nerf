@@ -40,7 +40,7 @@ class NeRF(nn.Module):
         x11 = F.relu(self.linear10(x10))
         rgb = F.sigmoid(self.linear11(x11))
 
-        return alpha,rgb
+        return rgb,alpha
 
 if __name__ == "__main__":
      x = torch.rand(4,60)

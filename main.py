@@ -84,12 +84,12 @@ for i in range(epoch):
     #random all the rays
     random_tensor = torch.randperm(num_rays)
     rays = rays[random_tensor,:]
-    print(rays.shape)
+    #print(rays.shape)
     # torch.split将产生tuple,tuple可以迭代并且其中的每个元素都是一个tensor -> [batchsize,3]
     train_iter = iter(torch.split(rays, batchsize, dim=0))
     for i in range(iteration):
         train_rays = train_iter.__next__()
-        print(train_rays.shape)
+        #print(train_rays.shape)
         #通过torch.chunk分成三份 最后一维是9 切边变为3，之前用concatenate再最后一维拼接起来的，所以这样拆开没有改变顺序
         rays_o_train , rays_d_train , rays_rgb_train =  torch.chunk(train_rays,3,dim=-1)
         Render_rays(net,rays_o_train,rays_d_train,rays_rgb_train,bound,N_samples)
