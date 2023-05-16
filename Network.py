@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import numpy as np
 # from torch.utils.tensorboard import SummaryWriter
 # writer = SummaryWriter()
+torch.set_printoptions(profile="full")
 
 #这个version下的NeRF没有加上原来的坐标而是完全按照paper的60 dim来处理(x,y,z) 24 dim来处理方向
 class NeRF(nn.Module):
@@ -33,13 +34,13 @@ class NeRF(nn.Module):
         x6 = F.relu(self.linear6(x5))
         x7 = F.relu(self.linear7(x6))
         x8 = F.relu(self.linear8(x7))
-        alpha = self.linear_alpha(x8)
+        alpha = torch.sigmoid(self.linear_alpha(x8))
         x9 = F.relu(self.linear9(x8))
 
         x10 = torch.concat((x9,dir),dim=1)
         x11 = F.relu(self.linear10(x10))
-        rgb = F.sigmoid(self.linear11(x11))
-
+        rgb = torch.sigmoid(self.linear11(x11))
+        #print(alpha)
         return rgb,alpha
 
 if __name__ == "__main__":
