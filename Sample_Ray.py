@@ -32,9 +32,6 @@ def positional_embedding(input,L):
 
 
 
-
-
-
 def render_output(net,pts,rays_o,rays_d,near,z_vals):
      # pts => tensor(Batch_Size, uniform_N, 3)
      # rays_d => tensor(Batch_Size, 3)
@@ -56,20 +53,14 @@ def render_output(net,pts,rays_o,rays_d,near,z_vals):
      INF = torch.ones(delta[..., :1].shape).fill_(1e10)
      delta = torch.cat([delta, INF], -1)  # 在delta后面拼接了一个INF
      # 5.1569e-02, 8.6743e-02
-     norm = torch.norm(rays_d, dim=-1, keepdim=True)
+     #norm = torch.norm(rays_d, dim=-1, keepdim=True)
      delta = delta * torch.norm(rays_d, dim=-1, keepdim=True)
-
+     sigma = torch.reshape(sigma,shape=(delta.shape[0],delta.shape[1]))
      alpha = 1. - torch.exp(-sigma * delta)
      ones = torch.ones(alpha[..., :1].shape)
      weights = alpha * torch.cumprod(torch.cat([ones, 1. - alpha], dim=-1), dim=-1)[..., :-1]
 
      return rgb, weights
-
-
-
-
-
-
 
 def Render_rays(net,rays_o,rays_d,bound,N_samples):
      near,far = bound[0],bound[1]
@@ -79,11 +70,16 @@ def Render_rays(net,rays_o,rays_d,bound,N_samples):
      rays_o = rays_o
      rays_d = rays_d
      z_vals = uniform_sample(near,far,N_samples)
-     pts = rays_o[..., None, :] + rays_d[..., None, :] * z_vals[..., :, None]  # [N_rays, N_samples, 3]
+     # pts就是world view下的三维点
      # pts => tensor(Batch_Size, uniform_N, 3)
      # rays_o, rays_d => tensor(Batch_Size, 3)
-     rgb , weights = render_output(net,pts,rays_o,rays_d,near,z_vals)
+     # z_vals 是在near 和 far 之间进行的采样 这里是均匀采样Uniform的
+     rays_d_norm = F.normalize(rays_d, p=2, dim=-1)
 
+     pts = rays_o[..., None, :] + rays_d_norm[..., None, :] * z_vals[..., :, None]  # [N_rays, N_samples, 3]
+
+     rgb , weights = render_output(net,pts,rays_o,rays_d,near,z_vals)
+     rgb = torch.reshape(rgb,shape=(weights.shape[0],weights.shape[1],-1))
      rgb_map = torch.sum(weights[..., None] * rgb, dim=-2)
 
      return rgb_map
