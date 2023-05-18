@@ -8,8 +8,8 @@ from Sample_Ray import Render_rays
 from tqdm import tqdm
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-torch.manual_seed(3407)
-np.random.seed(3407)
+torch.manual_seed(1)
+np.random.seed(1)
 n_train = 100
 # 每条光线上采了多少个点
 N_samples = 64
@@ -98,6 +98,8 @@ for i in range(epoch):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            torch.save(net,'model_name.pth')
+
             p_bar.set_postfix({'loss': '{0:1.5f}'.format(loss.item())})
             p_bar.update(1)
 
@@ -111,3 +113,5 @@ for i in range(epoch):
         loss = mse(rgb, torch.tensor(test_img, device=device)).cpu()
         psnr = -10. * torch.log(loss).item() / torch.log(torch.tensor([10.]))
         print(f"PSNR={psnr.item()}")
+
+

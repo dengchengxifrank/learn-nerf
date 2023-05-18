@@ -38,9 +38,13 @@ def render_output(net,pts,rays_o,rays_d,near,z_vals):
      #pts[4096,64,3] z_vals [64]
      space_cordinate = torch.reshape(pts,shape=[-1,3])
      pts_embedding = positional_embedding(space_cordinate,L=10)
-     #print('pts',pts_embedding.shape) #pts torch.Size([262144, 60])
-     #direction_norm = F.normalize(rays_d,p=2,dim=1)
-     #这里是先在第二维进行增维,然后赋值以下pts的shape,因为原来rays_d是需要考虑
+     '''
+     print('pts',pts_embedding.shape) #pts torch.Size([262144, 60])
+     direction_norm = F.normalize(rays_d,p=2,dim=1)
+     这里是先在第二维进行增维,然后赋值以下pts的shape,因为原来rays_d是需要考虑
+     这里需要对rays_d做归一化,因为不同的位置pts对应了不同的embedding,但是这里rays_d只表示方向,这意味三维空间的同一个方向应该有一样的embedding
+     比如一个点(x,y,z) 方向是dir,则已经可以确定最后render的结果,而dir的embedding需要作为network输入,这就意味这需要dir需要有一个规则化的表示
+     '''
      direction_norm = F.normalize(torch.reshape(rays_d.unsqueeze(-2).expand_as(pts), [-1, 3]), p=2, dim=-1)
      dir_embedding = positional_embedding(direction_norm,L=4)
 
