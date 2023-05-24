@@ -34,7 +34,7 @@ class NeRF(nn.Module):
         x6 = F.relu(self.linear6(x5))
         x7 = F.relu(self.linear7(x6))
         x8 = F.relu(self.linear8(x7))
-        alpha = torch.sigmoid(self.linear_alpha(x8))
+        alpha = self.linear_alpha(x8)
         x9 = F.relu(self.linear9(x8))
 
         x10 = torch.concat((x9,dir),dim=1)
